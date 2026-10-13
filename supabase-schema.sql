@@ -26,8 +26,10 @@ revoke all on public.team_members, public.project_items from anon;
 grant select on public.team_members to authenticated;
 grant select, insert, update, delete on public.project_items to authenticated;
 grant usage, select on all sequences in schema public to authenticated;
+-- A member can read their own membership. Querying team_members inside its own
+-- policy would recurse and can fail with "infinite recursion detected".
 create policy "members read team" on public.team_members for select to authenticated
-using (exists (select 1 from public.team_members me where me.user_id=(select auth.uid())));
+using (user_id = (select auth.uid()));
 create policy "members read items" on public.project_items for select to authenticated
 using (exists (select 1 from public.team_members me where me.user_id=(select auth.uid())));
 create policy "editors create items" on public.project_items for insert to authenticated
